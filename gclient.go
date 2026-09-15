@@ -641,8 +641,20 @@ func (c *Client) newDown(id string) (*webrtc.PeerConnection, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err1 := pc.AddTransceiverFromKind(webrtc.RTPCodecTypeAudio)
-	_, err2 := pc.AddTransceiverFromKind(webrtc.RTPCodecTypeVideo)
+
+	transceiverInit := webrtc.RTPTransceiverInit{
+		Direction: webrtc.RTPTransceiverDirectionRecvonly,
+	}
+
+	_, err1 := pc.AddTransceiverFromKind(
+		webrtc.RTPCodecTypeAudio,
+		transceiverInit,
+	)
+	_, err2 := pc.AddTransceiverFromKind(
+		webrtc.RTPCodecTypeVideo,
+		transceiverInit,
+	)
+
 	// succeed if we managed to add at least one transceiver
 	if err1 != nil && err2 != nil {
 		pc.Close()
