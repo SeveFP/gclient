@@ -440,8 +440,11 @@ type UserMessageEvent struct {
 
 // DownConnEvent indicates that we have received a new down connection.
 type DownConnEvent struct {
-	Id   string
-	Conn *webrtc.PeerConnection
+	Id       string
+	Source   string
+	Username string
+	Label    string
+	Conn     *webrtc.PeerConnection
 }
 
 // DownTrackEvent indicates that we have received a new down track.
@@ -729,8 +732,11 @@ func (c *Client) gotOffer(id, label, source, username, offer, replace string) er
 	})
 
 	c.EventCh <- DownConnEvent{
-		Id:   id,
-		Conn: pc,
+		Id:       id,
+		Source:   source,
+		Username: username,
+		Label:    label,
+		Conn:     pc,
 	}
 
 	return nil
