@@ -15,6 +15,27 @@ import (
 	"github.com/jech/gclient"
 )
 
+type stream struct {
+	username string
+	label    string
+}
+
+// The layouts take the username followed by the activity.
+const (
+	startedLayout = "%s started %s"
+	stoppedLayout = "%s stopped %s"
+)
+
+func (s stream) format(layout string) string {
+	switch s.label {
+	case "camera":
+		return fmt.Sprintf(layout, s.username, "sharing: Camera")
+	case "screenshare":
+		return fmt.Sprintf(layout, s.username, "sharing: Screen")
+	}
+	return fmt.Sprintf(layout, s.username, "streaming")
+}
+
 func main() {
 	var username, password string
 	var insecure bool
@@ -67,7 +88,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	defer signal.Stop(stop)
 
-	streams := make(map[string]string)
+	streams := make(map[string]stream)
 
 	for {
 		select {
@@ -97,23 +118,16 @@ func main() {
 					}
 				}
 			case gclient.DownConnEvent:
-				var stopMessage string
-				switch event.Label {
-				case "camera":
-					fmt.Printf("%s started sharing: Camera\n", event.Username)
-					stopMessage = fmt.Sprintf("%s stopped sharing: Camera", event.Username)
-				case "screenshare":
-					fmt.Printf("%s started sharing: Screen\n", event.Username)
-					stopMessage = fmt.Sprintf("%s stopped sharing: Screen", event.Username)
-				default:
-					fmt.Printf("%s started streaming\n", event.Username)
-					stopMessage = fmt.Sprintf("%s stopped streaming", event.Username)
+				s := stream{
+					username: event.Username,
+					label:    event.Label,
 				}
-				streams[event.Id] = stopMessage
+				streams[event.Id] = s
+				fmt.Println(s.format(startedLayout))
 			case gclient.CloseEvent:
-				if stopMessage, ok := streams[event.Id]; ok {
-					fmt.Println(stopMessage)
+				if s, ok := streams[event.Id]; ok {
 					delete(streams, event.Id)
+					fmt.Println(s.format(stoppedLayout))
 				}
 			case error:
 				log.Printf("client error: %v", event)
